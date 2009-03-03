@@ -22,17 +22,17 @@ public abstract class Fuzzer {
 	private final int SEGV = 11;
 
 	/**
-	 * BufferedWriter used to log seeds that create output that causes a SEGV.
-	 */
-	private BufferedWriter logWriter;
-
-	/**
 	 * Name of target application executable.
 	 */
 	private String targetExecutable;
 
 	/**
-	 * Random number generater used when generating random input.
+	 * BufferedWriter used to log seeds that create output that causes a SEGV.
+	 */
+	protected BufferedWriter logWriter;
+	
+	/**
+	 * Random number generator used when generating random input.
 	 */
 	protected Random randomNumberGenerator;
 
@@ -46,13 +46,16 @@ public abstract class Fuzzer {
 	 * 
 	 * @param outputFile
 	 *            output file
+	 * @throws IOException 
+	 * @throws FileNotFoundException 
 	 */
-	protected abstract void writeToOutputFile(File outputFile);
+	protected abstract void writeToOutputFile(File outputFile) throws FileNotFoundException, IOException;
 
 	/**
 	 * Write the fuzzer's execution parameters to the log file.
+	 * @throws IOException 
 	 */
-	protected abstract void logExecutionParameters();
+	protected abstract void logExecutionParameters() throws IOException;
 
 	/**
 	 * Generate a random filename. UUID based filenames are used to prevent
@@ -84,12 +87,12 @@ public abstract class Fuzzer {
 			// Create the output file.
 			File testFile = new File(generateRandomFilename("jpg"));
 			writeToOutputFile(testFile);
-
+			
 			// Run the process.
 			ProcessBuilder targetProcessBuilder = new ProcessBuilder(
 					this.targetExecutable, testFile.getPath());
 			Process targetProcess = targetProcessBuilder.start();
-
+			
 			// Log if we got a SEGV.
 			if (targetProcess.exitValue() == SEGV) {
 				logWriter.write(seed.toString());
@@ -118,7 +121,7 @@ public abstract class Fuzzer {
 		this.logWriter = new BufferedWriter(fstream);
 
 		// Load the input image.
-		this.sourceImage = new FileImageInputStream(
-				new File(inputImageFilename));
+		File inputImage = new File(inputImageFilename);
+		this.sourceImage = new FileImageInputStream(inputImage);
 	}
 }

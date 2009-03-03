@@ -10,11 +10,15 @@ import java.io.IOException;
 /**
  *
  */
-public class ProtocolAwareFuzzer extends Fuzzer {
+public final class ProtocolAwareFuzzer extends Fuzzer {
 
 	/**
+	 * Construct a new MutationFuzzer object.
+	 * 
 	 * @param executable
+	 *            executable for target application
 	 * @param inputImageFilename
+	 *            name of input file from which fuzzer outputs are generated.
 	 * @throws FileNotFoundException
 	 * @throws IOException
 	 */
