@@ -80,6 +80,8 @@ public final class ProtocolAwareFuzzer extends MutationFuzzer {
 
 		// Create output stream.
 		FileImageOutputStream outputImage = new FileImageOutputStream(outputFile);
+		byte[] outArray = new byte[sourceData.length * 2];
+		int j = 0;
 		
 		// Iterate over input stream.
 		for (int i = 0; i < sourceData.length; ++i) {
@@ -104,22 +106,25 @@ public final class ProtocolAwareFuzzer extends MutationFuzzer {
 							+ this.randomNumberGenerator.nextInt(byteManipulationRangeLength);
 					byte[] randomByteArray = new byte[insertionLength];
 					this.randomNumberGenerator.nextBytes(randomByteArray);
-					outputImage.write(randomByteArray);
+					for(int k = 0; k<randomByteArray.length; k++) {
+						outArray[j++] = randomByteArray[k];
+					}
 					
 				// Modify random bytes.
 				// TODO Do this on a random number of bytes and make sure we don't go past the EOF.
 				} else if (mutationTypeValue <= byteModificationValueLimit) {
 					byte[] randomByteArray = new byte[1];
 					this.randomNumberGenerator.nextBytes(randomByteArray);
-					outputImage.write(randomByteArray);
+					outArray[j++] = randomByteArray[0];
 				}
 			} else {
 				// Write the original byte.
-				outputImage.write(b);
+				outArray[j++] = b;
 			}
 		}
 		
 		try {
+			outputImage.write(outArray, 0, j);
 			outputImage.close();
 		} catch (IOException e) {
 			// this only happens if it's already closed
