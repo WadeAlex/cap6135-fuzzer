@@ -154,13 +154,6 @@ public final class MutationFuzzer extends Fuzzer {
 				outputImage.write(b);
 			}
 		}
-		System.out.print( " mutations: " + mutationCount + " mod: " + modCount + " in: " + insertionCount + " del: " + removalCount);
-		
-		/*try {
-			sourceImage.close();
-		} catch (IOException e) {
-			// this only happens if it's already closed
-		}*/
 		
 		try {
 			outputImage.close();
@@ -187,6 +180,7 @@ public final class MutationFuzzer extends Fuzzer {
 		for (int i = 0; i < sourceImage.length(); ++i) {
 			sourceData[i] = sourceImage.readByte();
 		}
+		sourceImage.close();
 	}
 
 	/**
