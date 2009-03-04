@@ -43,6 +43,8 @@ public final class MutationFuzzer extends Fuzzer {
 	 * Maximum manipulation length.
 	 */
 	private int maximumManipulationLength;
+	
+	private byte[] sourceData;
 
 	/*
 	 * (non-Javadoc)
@@ -74,6 +76,21 @@ public final class MutationFuzzer extends Fuzzer {
 	 */
 	@Override
 	protected void writeToOutputFile(File outputFile) throws FileNotFoundException, IOException {
+		float f = 0f;
+		while ((f = randomNumberGenerator.nextFloat()) > 0.01)
+			;
+		setMutationProbability(f);
+		while ((f = randomNumberGenerator.nextFloat()) > 0.333)
+			;
+		setByteRemovalProbability(f);
+		while ((f = randomNumberGenerator.nextFloat()) > 0.333)
+			;
+		setByteInsertionProbability(f);
+		setByteModificationProbability(0.333);
+		setMinimumManipulationLength(1);
+		
+		setMaximumManipulationLength(randomNumberGenerator.nextInt(2) + 2);
+		
 		// These are the limits used when randomly determining mutation type.
 		double byteRemovalValueLimit = this.byteRemovalProbability;
 		double byteInsertionValueLimit = this.byteRemovalProbability + this.byteInsertionProbability;
@@ -84,31 +101,40 @@ public final class MutationFuzzer extends Fuzzer {
 
 		// Create output stream.
 		FileImageOutputStream outputImage = new FileImageOutputStream(outputFile);
+		//sourceImage.seek(0);
 
+		int mutationCount = 0;
+		int removalCount = 0;
+		int insertionCount = 0;
+		int modCount = 0;
+		
 		// Iterate over input stream.
-		for (int i = 0; i < sourceImage.length(); ++i) {
+		for (int i = 0; i < sourceData.length; ++i) {
 			// Read the next byte from the source image.
-			byte b = sourceImage.readByte();
+			byte b = sourceData[i];
 
 			// Perform mutation based on random value.
 			if (this.mutationProbability != 0.0 && this.randomNumberGenerator.nextFloat() <= this.mutationProbability) {
+				mutationCount++;
 				// Use random float value to determine mutation type.
 				float mutationTypeValue = this.randomNumberGenerator.nextFloat();
 				
 				// TODO Use a separate function to determine mutation length.
 				// Skip X number of bytes in the input file.
 				if (mutationTypeValue <= byteRemovalValueLimit) {
+					removalCount++;
 					int deletionLength = this.minimumManipulationLength + this.randomNumberGenerator.nextInt(byteManipulationRangeLength);
-					long seekLocation = sourceImage.getStreamPosition() + deletionLength;
-					if(seekLocation >= sourceImage.length()) {
+					long seekLocation = i + deletionLength;
+					if(seekLocation >= sourceData.length) {
 						break;
 					} else {
-						sourceImage.seek(seekLocation);
+						//sourceImage.seek(seekLocation);
 						i = (int)seekLocation;
 					}
 					
 				// Insert random bytes.
 				} else if (mutationTypeValue <= byteInsertionValueLimit) {
+					insertionCount++;
 					int insertionLength = this.minimumManipulationLength
 							+ this.randomNumberGenerator.nextInt(byteManipulationRangeLength);
 					byte[] randomByteArray = new byte[insertionLength];
@@ -118,6 +144,7 @@ public final class MutationFuzzer extends Fuzzer {
 				// Modify random bytes.
 				// TODO Do this on a random number of bytes and make sure we don't go past the EOF.
 				} else if (mutationTypeValue <= byteModificationValueLimit) {
+					modCount++;
 					byte[] singleByteArray = new byte[1];
 					this.randomNumberGenerator.nextBytes(singleByteArray);
 					outputImage.write(singleByteArray);
@@ -127,8 +154,19 @@ public final class MutationFuzzer extends Fuzzer {
 				outputImage.write(b);
 			}
 		}
-		sourceImage.close();
-		outputImage.close();
+		System.out.print( " mutations: " + mutationCount + " mod: " + modCount + " in: " + insertionCount + " del: " + removalCount);
+		
+		/*try {
+			sourceImage.close();
+		} catch (IOException e) {
+			// this only happens if it's already closed
+		}*/
+		
+		try {
+			outputImage.close();
+		} catch (IOException e) {
+			// this only happens if it's already closed
+		}
 	}
 
 	/**
@@ -141,8 +179,14 @@ public final class MutationFuzzer extends Fuzzer {
 	 * @throws FileNotFoundException
 	 * @throws IOException
 	 */
-	public MutationFuzzer(String executable, String inputImageFilename) throws FileNotFoundException, IOException {
-		super(executable, inputImageFilename);
+	public MutationFuzzer(String[] args) throws FileNotFoundException, IOException {
+		super(args);
+		
+		//buffer the input image
+		sourceData = new byte[(int)sourceImage.length()];
+		for (int i = 0; i < sourceImage.length(); ++i) {
+			sourceData[i] = sourceImage.readByte();
+		}
 	}
 
 	/**
@@ -210,13 +254,13 @@ public final class MutationFuzzer extends Fuzzer {
 	 */
 	public static void main(String[] args) {
 		try {
-			MutationFuzzer fuzzer = new MutationFuzzer("", "sample.jpg");
-			fuzzer.setMutationProbability(.01);
-			fuzzer.setByteInsertionProbability(.333);
-			fuzzer.setByteModificationProbability(.333);
-			fuzzer.setByteRemovalProbability(.333);
+			MutationFuzzer fuzzer = new MutationFuzzer(args);
+			fuzzer.setMutationProbability(.005);
+			fuzzer.setByteRemovalProbability(0.333);
+			fuzzer.setByteInsertionProbability(0.333);
+			fuzzer.setByteModificationProbability(0.333);
 			fuzzer.setMinimumManipulationLength(1);
-			fuzzer.setMaximumManipulationLength(5);
+			fuzzer.setMaximumManipulationLength(3);
 			fuzzer.execute();
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();

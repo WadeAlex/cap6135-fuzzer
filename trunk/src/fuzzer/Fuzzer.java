@@ -1,14 +1,13 @@
 package fuzzer;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.lang.ProcessBuilder;
-import java.util.Calendar;
+import java.io.InputStreamReader;
 import java.util.Random;
-import java.util.UUID;
 
 import javax.imageio.stream.FileImageInputStream;
 
@@ -19,12 +18,22 @@ public abstract class Fuzzer {
 	/**
 	 * Constant corresponding to SEGV exit code.
 	 */
-	private final int SEGV = 11;
+	private final int SEGV = 139;
 
 	/**
 	 * Name of target application executable.
 	 */
 	private String targetExecutable;
+	
+	/**
+	 * Name of input file.
+	 */
+	private String inputImageFilename;
+	
+	/**
+	 * Name of output file
+	 */
+	private String outputImageFilename;
 
 	/**
 	 * BufferedWriter used to log seeds that create output that causes a SEGV.
@@ -41,6 +50,9 @@ public abstract class Fuzzer {
 	 */
 	protected FileImageInputStream sourceImage;
 
+	private boolean replayMode = false;
+	private long replaySeed = 0;
+	
 	/**
 	 * Generate a target file with the fuzzer.
 	 * 
@@ -56,19 +68,30 @@ public abstract class Fuzzer {
 	 * @throws IOException 
 	 */
 	protected abstract void logExecutionParameters() throws IOException;
-
+	
 	/**
-	 * Generate a random filename. UUID based filenames are used to prevent
-	 * access violations in the event that there is a problem deleting a file
-	 * after execution.
-	 * 
-	 * @param extension
-	 *            extension of the file (without the preceding '.')
-	 * @return randomly generated filename.
+	 * Parse the commands input to the program.
+	 * @param args
 	 */
-	protected final String generateRandomFilename(String extension) {
-		UUID fileUuid = UUID.randomUUID();
-		return fileUuid + "." + extension;
+	protected void parseCmds(String[] args) {
+		if(args.length < 2) {
+			System.out.println("At least an input program, and input file are needed.");
+		}
+		for(int i=0; i<args.length; i++) {
+			String s = args[i];
+			if(s.charAt(0) == '-') {
+				if(s.equals("--fuzz-file")) {
+					inputImageFilename = args[++i];
+				} else if (s.equals("--replay")) {
+					replayMode = true;
+					replaySeed = Long.parseLong(args[++i], 16);
+				}
+			} else {
+				targetExecutable = args[i];
+				outputImageFilename = args[++i];
+				break;
+			}
+		}
 	}
 
 	/**
@@ -79,28 +102,67 @@ public abstract class Fuzzer {
 	 */
 	protected final void execute() throws IOException {
 		logExecutionParameters();
+		int i = 0;
+		char[] buffer = new char[1024];
 		while (true) {
+			System.out.print("iteration: " + ++i);
 			// Seed random number generator.
-			Long seed = Calendar.getInstance().getTimeInMillis();
-			randomNumberGenerator = new Random(seed);
+			Long seed = 0L;
+			if(replayMode) {
+				seed = replaySeed;
+				randomNumberGenerator = new Random(replaySeed);
+			} else {
+				if(randomNumberGenerator == null)
+					seed = System.nanoTime();
+				else
+					seed = (randomNumberGenerator.nextInt(10) >= 5)? randomNumberGenerator.nextLong() : System.nanoTime();
+				randomNumberGenerator = new Random(seed);
+			}
 
 			// Create the output file.
-			File testFile = new File(generateRandomFilename("jpg"));
+			File testFile = new File(outputImageFilename);
 			writeToOutputFile(testFile);
 			
 			// Run the process.
 			ProcessBuilder targetProcessBuilder = new ProcessBuilder(
-					this.targetExecutable, testFile.getPath());
+					"./" + this.targetExecutable, testFile.getPath());
+			
 			Process targetProcess = targetProcessBuilder.start();
 			
-			// Log if we got a SEGV.
-			if (targetProcess.exitValue() == SEGV) {
-				logWriter.write(seed.toString());
-				logWriter.newLine();
+			String s = "";
+			try {
+				BufferedReader err = new BufferedReader(new InputStreamReader(targetProcess.getErrorStream()));
+				BufferedReader in = new BufferedReader(new InputStreamReader(targetProcess.getInputStream()));
+				while (in.read(buffer) != -1)
+					;
+				s = err.readLine();
+				in.close();
+				err.close();
+			} catch (IOException e) {
+				e.printStackTrace();
 			}
-
-			// Delete the test file.
-			testFile.delete();
+			
+			try {
+				targetProcess.waitFor();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+			
+			// Log if we got a SEGV.
+			if (targetProcess.exitValue() == SEGV && s.indexOf("BUG") != -1) {
+				System.out.print(" Crash Found " + s);
+				logWriter.write(i + " " + s + " ");
+				logWriter.write(Long.toHexString(seed));
+				logWriter.newLine();
+				logWriter.flush();
+			} else {
+				// Delete the test file.
+				testFile.delete();
+			}
+			System.out.println();
+			
+			if(replayMode)
+				break;
 		}
 	}
 
@@ -114,8 +176,9 @@ public abstract class Fuzzer {
 	 * @throws FileNotFoundException
 	 * @throws IOException
 	 */
-	public Fuzzer(String executable, String inputImageFilename)
+	public Fuzzer(String[] args)
 			throws FileNotFoundException, IOException {
+		parseCmds(args);
 		// Create output stream for writing seeds that cause a SEGV.
 		FileWriter fstream = new FileWriter("log");
 		this.logWriter = new BufferedWriter(fstream);

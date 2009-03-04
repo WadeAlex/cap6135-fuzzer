@@ -22,9 +22,9 @@ public final class ProtocolAwareFuzzer extends Fuzzer {
 	 * @throws FileNotFoundException
 	 * @throws IOException
 	 */
-	public ProtocolAwareFuzzer(String executable, String inputImageFilename)
+	public ProtocolAwareFuzzer(String[] args)
 			throws FileNotFoundException, IOException {
-		super(executable, inputImageFilename);
+		super(args);
 		// TODO Auto-generated constructor stub
 	}
 
