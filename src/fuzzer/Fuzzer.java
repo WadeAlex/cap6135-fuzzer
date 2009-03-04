@@ -7,6 +7,7 @@ import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.Calendar;
 import java.util.Random;
 
 import javax.imageio.stream.FileImageInputStream;
@@ -151,7 +152,7 @@ public abstract class Fuzzer {
 			// Log if we got a SEGV.
 			if (targetProcess.exitValue() == SEGV && s.indexOf("BUG") != -1) {
 				System.out.print(" Crash Found " + s);
-				logWriter.write(i + " " + s + " ");
+				logWriter.write(Calendar.getInstance().getTime().toString() + ":" + i + " " + s + " ");
 				logWriter.write(Long.toHexString(seed));
 				logWriter.newLine();
 				logWriter.flush();

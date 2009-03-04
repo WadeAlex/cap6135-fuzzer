@@ -57,7 +57,7 @@ public final class ProtocolAwareFuzzer extends MutationFuzzer {
 	@Override
 	protected void writeToOutputFile(File outputFile) throws FileNotFoundException, IOException {
 		float f = 0f;
-		while ((f = randomNumberGenerator.nextFloat()) > 0.1)
+		while ((f = randomNumberGenerator.nextFloat()) > 0.05)
 			;
 		setMutationProbability(f);
 		while ((f = randomNumberGenerator.nextFloat()) > 0.333)
@@ -68,7 +68,7 @@ public final class ProtocolAwareFuzzer extends MutationFuzzer {
 		setByteInsertionProbability(f);
 		setByteModificationProbability(0.333);
 		setMinimumManipulationLength(1);
-		setMaximumManipulationLength(randomNumberGenerator.nextInt(2) + 3);
+		setMaximumManipulationLength(randomNumberGenerator.nextInt(2) + 2);
 		
 		// These are the limits used when randomly determining mutation type.
 		double byteRemovalValueLimit = this.byteRemovalProbability;
@@ -96,13 +96,7 @@ public final class ProtocolAwareFuzzer extends MutationFuzzer {
 				// TODO Use a separate function to determine mutation length.
 				// Skip X number of bytes in the input file.
 				if (mutationTypeValue <= byteRemovalValueLimit) {
-					long seekLocation = i + 1;
-					if(seekLocation >= sourceData.length) {
-						break;
-					} else {
-						//sourceImage.seek(seekLocation);
-						i = (int)seekLocation;
-					}
+					i++;
 					
 				// Insert random bytes.
 				} else if (mutationTypeValue <= byteInsertionValueLimit) {
@@ -111,13 +105,13 @@ public final class ProtocolAwareFuzzer extends MutationFuzzer {
 					byte[] randomByteArray = new byte[insertionLength];
 					this.randomNumberGenerator.nextBytes(randomByteArray);
 					outputImage.write(randomByteArray);
-				
+					
 				// Modify random bytes.
 				// TODO Do this on a random number of bytes and make sure we don't go past the EOF.
 				} else if (mutationTypeValue <= byteModificationValueLimit) {
-					//byte[] singleByteArray = new byte[1];
-					//this.randomNumberGenerator.nextBytes(singleByteArray);
-					outputImage.write(((byte)randomNumberGenerator.nextInt())&0xFF);
+					byte[] randomByteArray = new byte[1];
+					this.randomNumberGenerator.nextBytes(randomByteArray);
+					outputImage.write(randomByteArray);
 				}
 			} else {
 				// Write the original byte.
