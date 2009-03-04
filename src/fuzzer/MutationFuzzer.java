@@ -12,22 +12,22 @@ import javax.imageio.stream.FileImageOutputStream;
  * The mutation fuzzer creates test files by "mutating" the input file based on
  * random numbers and input parameters.
  */
-public final class MutationFuzzer extends Fuzzer {
+public class MutationFuzzer extends Fuzzer {
 
 	/**
 	 * Mutation probability.
 	 */
-	private double mutationProbability;
+	protected double mutationProbability;
 
 	/**
 	 * Byte removal probability.
 	 */
-	private double byteRemovalProbability;
+	protected double byteRemovalProbability;
 
 	/**
 	 * Byte insertion probability.
 	 */
-	private double byteInsertionProbability;
+	protected double byteInsertionProbability;
 
 	/**
 	 * Byte modification probability.
@@ -37,14 +37,14 @@ public final class MutationFuzzer extends Fuzzer {
 	/**
 	 * Minimum manipulation length.
 	 */
-	private int minimumManipulationLength;
+	protected int minimumManipulationLength;
 
 	/**
 	 * Maximum manipulation length.
 	 */
-	private int maximumManipulationLength;
+	protected int maximumManipulationLength;
 	
-	private byte[] sourceData;
+	protected byte[] sourceData;
 
 	/*
 	 * (non-Javadoc)
@@ -88,7 +88,6 @@ public final class MutationFuzzer extends Fuzzer {
 		setByteInsertionProbability(f);
 		setByteModificationProbability(0.333);
 		setMinimumManipulationLength(1);
-		
 		setMaximumManipulationLength(randomNumberGenerator.nextInt(2) + 2);
 		
 		// These are the limits used when randomly determining mutation type.
@@ -101,12 +100,6 @@ public final class MutationFuzzer extends Fuzzer {
 
 		// Create output stream.
 		FileImageOutputStream outputImage = new FileImageOutputStream(outputFile);
-		//sourceImage.seek(0);
-
-		int mutationCount = 0;
-		int removalCount = 0;
-		int insertionCount = 0;
-		int modCount = 0;
 		
 		// Iterate over input stream.
 		for (int i = 0; i < sourceData.length; ++i) {
@@ -115,14 +108,12 @@ public final class MutationFuzzer extends Fuzzer {
 
 			// Perform mutation based on random value.
 			if (this.mutationProbability != 0.0 && this.randomNumberGenerator.nextFloat() <= this.mutationProbability) {
-				mutationCount++;
 				// Use random float value to determine mutation type.
 				float mutationTypeValue = this.randomNumberGenerator.nextFloat();
 				
 				// TODO Use a separate function to determine mutation length.
 				// Skip X number of bytes in the input file.
 				if (mutationTypeValue <= byteRemovalValueLimit) {
-					removalCount++;
 					int deletionLength = this.minimumManipulationLength + this.randomNumberGenerator.nextInt(byteManipulationRangeLength);
 					long seekLocation = i + deletionLength;
 					if(seekLocation >= sourceData.length) {
@@ -134,7 +125,6 @@ public final class MutationFuzzer extends Fuzzer {
 					
 				// Insert random bytes.
 				} else if (mutationTypeValue <= byteInsertionValueLimit) {
-					insertionCount++;
 					int insertionLength = this.minimumManipulationLength
 							+ this.randomNumberGenerator.nextInt(byteManipulationRangeLength);
 					byte[] randomByteArray = new byte[insertionLength];
@@ -144,7 +134,6 @@ public final class MutationFuzzer extends Fuzzer {
 				// Modify random bytes.
 				// TODO Do this on a random number of bytes and make sure we don't go past the EOF.
 				} else if (mutationTypeValue <= byteModificationValueLimit) {
-					modCount++;
 					byte[] singleByteArray = new byte[1];
 					this.randomNumberGenerator.nextBytes(singleByteArray);
 					outputImage.write(singleByteArray);
@@ -249,12 +238,6 @@ public final class MutationFuzzer extends Fuzzer {
 	public static void main(String[] args) {
 		try {
 			MutationFuzzer fuzzer = new MutationFuzzer(args);
-			fuzzer.setMutationProbability(.005);
-			fuzzer.setByteRemovalProbability(0.333);
-			fuzzer.setByteInsertionProbability(0.333);
-			fuzzer.setByteModificationProbability(0.333);
-			fuzzer.setMinimumManipulationLength(1);
-			fuzzer.setMaximumManipulationLength(3);
 			fuzzer.execute();
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
