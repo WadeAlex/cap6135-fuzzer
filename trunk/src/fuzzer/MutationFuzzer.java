@@ -77,7 +77,7 @@ public class MutationFuzzer extends Fuzzer {
 	@Override
 	protected void writeToOutputFile(File outputFile) throws FileNotFoundException, IOException {
 		float f = 0f;
-		while ((f = randomNumberGenerator.nextFloat()) > 0.01)
+		while ((f = randomNumberGenerator.nextFloat()) > 0.05)
 			;
 		setMutationProbability(f);
 		while ((f = randomNumberGenerator.nextFloat()) > 0.333)
