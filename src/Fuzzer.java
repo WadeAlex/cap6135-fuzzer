@@ -120,6 +120,7 @@ public abstract class Fuzzer {
 				for (String str:targetProcessBuilder.command()) {
 					System.out.print(str + " ");
 				}
+				System.out.println();
 				return;
 			}
 			
