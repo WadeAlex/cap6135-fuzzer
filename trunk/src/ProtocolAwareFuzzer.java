@@ -9,8 +9,6 @@ import java.util.Set;
 
 import javax.imageio.stream.FileImageOutputStream;
 
-import fuzzer.MutationFuzzer;
-
 /**
  *
  */
