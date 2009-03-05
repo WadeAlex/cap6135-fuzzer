@@ -3,9 +3,6 @@
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
 
 import javax.imageio.stream.FileImageOutputStream;
 
@@ -13,8 +10,6 @@ import javax.imageio.stream.FileImageOutputStream;
  *
  */
 public final class ProtocolAwareFuzzer extends MutationFuzzer {
-
-	Set<Integer> illegalValues = null;
 	
 	/**
 	 * Construct a new MutationFuzzer object.
@@ -30,25 +25,10 @@ public final class ProtocolAwareFuzzer extends MutationFuzzer {
 			throws FileNotFoundException, IOException {
 		super(args);
 		
-		illegalValues = new HashSet<Integer>(
-				Arrays.asList(0x00, 0x01, 0x02,
-						0x14, 0x59,
-						0x9e, 0xb1,
-						0xd2, 0x119, 0x139,
-						0x17c));
-		
-	}
-
-	/* (non-Javadoc)
-	 * @see fuzzer.Fuzzer#logExecutionParameters()
-	 */
-	@Override
-	protected void logExecutionParameters() {
-		
 	}
 	
 	private boolean legalManipulationByte(int i) {
-		return !illegalValues.contains(i) && (i < 0x18a);
+		return (i > 1) && (i < 0x18a);
 	}
 
 	@Override
@@ -95,7 +75,14 @@ public final class ProtocolAwareFuzzer extends MutationFuzzer {
 				// TODO Use a separate function to determine mutation length.
 				// Skip X number of bytes in the input file.
 				if (mutationTypeValue <= byteRemovalValueLimit) {
-					i++;
+					int deletionLength = this.minimumManipulationLength + this.randomNumberGenerator.nextInt(byteManipulationRangeLength);
+					long seekLocation = i + deletionLength;
+					if(seekLocation >= sourceData.length) {
+						break;
+					} else {
+						//sourceImage.seek(seekLocation);
+						i = (int)seekLocation;
+					}
 					
 				// Insert random bytes.
 				} else if (mutationTypeValue <= byteInsertionValueLimit) {

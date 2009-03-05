@@ -3,6 +3,7 @@
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+
 import javax.imageio.stream.FileImageOutputStream;
 
 /**
@@ -42,29 +43,6 @@ public class MutationFuzzer extends Fuzzer {
 	protected int maximumManipulationLength;
 	
 	protected byte[] sourceData;
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see fuzzer.Fuzzer#logExecutionParameters()
-	 */
-	@Override
-	protected void logExecutionParameters() throws IOException {
-		this.logWriter.write("Results from using mutation fuzzer.");
-		this.logWriter.newLine();
-		this.logWriter.write("Mutation probability: " + this.mutationProbability);
-		this.logWriter.newLine();
-		this.logWriter.write("Byte removal probability: " + this.byteRemovalProbability);
-		this.logWriter.newLine();
-		this.logWriter.write("Byte insertion probability: " + this.byteInsertionProbability);
-		this.logWriter.newLine();
-		this.logWriter.write("Byte modification probability: " + this.byteModificationProbability);
-		this.logWriter.newLine();
-		this.logWriter.write("Minimum manipulation length: " + this.minimumManipulationLength);
-		this.logWriter.newLine();
-		this.logWriter.write("Maximum manipulation length: " + this.maximumManipulationLength);
-		this.logWriter.newLine();
-	}
 
 	/*
 	 * (non-Javadoc)
