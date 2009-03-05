@@ -5,9 +5,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.HashSet;
 import java.util.Random;
-import java.util.Set;
 
 import javax.imageio.stream.FileImageInputStream;
 
@@ -92,10 +90,7 @@ public abstract class Fuzzer {
 	 */
 	protected final void execute() throws IOException {
 		char[] buffer = new char[1024];
-		Set<String> found = new HashSet<String>();
-		int i = 0;
-		while (true && found.size() < 10) {
-			++i;
+		while (true) {
 			// Seed random number generator.
 			Long seed = 0L;
 			if(replayMode) {
@@ -146,9 +141,8 @@ public abstract class Fuzzer {
 			}
 			
 			// Log if we got a SEGV.
-			if (targetProcess.exitValue() == SEGV && s.indexOf("BUG") != -1 && !found.contains(s)) {
-				found.add(s);
-				System.out.println(i + " " + Long.toString(seed, 30) + " " + s);
+			if (targetProcess.exitValue() == SEGV && s.indexOf("BUG") != -1) {
+				System.out.println(Long.toString(seed, 30));
 			} else {
 				// Delete the test file.
 				testFile.delete();
