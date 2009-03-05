@@ -1,7 +1,4 @@
-/**
- * 
- */
-package fuzzer;
+
 
 import java.io.File;
 import java.io.FileNotFoundException;
