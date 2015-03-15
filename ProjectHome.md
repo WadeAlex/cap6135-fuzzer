@@ -1,0 +1,1 @@
+Fuzzer project, contains both a mutation-based and a protocol-aware fuzzer.
